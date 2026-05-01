@@ -1,0 +1,44 @@
+# Experiment configuration for GP Starlink Detector
+# Override individual fields on the command line or in per-experiment configs.
+
+data:
+  db_path: "../starlink-passive-detection/data/detections.db"
+  bg_ratio: 10          # negative:positive ratio for downsampling BACKGROUND
+  val_frac: 0.15
+  test_frac: 0.15
+  seed: 42
+
+features:
+  cols:
+    - z_score
+    - log_z
+    - harmonics
+    - freq_deviation
+    - sat_elevation
+    - hour_sin
+    - hour_cos
+    - campaign_day
+  geom_dims: [4]         # sat_elevation
+  spec_dims:  [0, 1, 2, 3]
+  time_dims:  [5, 6, 7]
+
+svgp:
+  n_inducing: 300
+  n_epochs: 80
+  batch_size: 512
+  lr: 0.05
+  seed: 42
+
+baselines:
+  logreg:
+    C: 1.0
+  mlp:
+    hidden_layers: [64, 32]
+
+evaluation:
+  n_cal_bins: 15
+  elev_bins:
+    - [50, 65]
+    - [65, 75]
+    - [75, 85]
+    - [85, 91]
