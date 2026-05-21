@@ -1,0 +1,101 @@
+[
+  {
+    "sweep": "n_inducing",
+    "n_inducing": 50,
+    "lr": 0.05,
+    "val_ece": 7.727723226595221e-05,
+    "val_auroc": 1.0,
+    "te_ece": 0.00014041092626978054,
+    "te_auroc": 0.9999999999999999,
+    "final_loss": 0.0006381690683084903,
+    "time_s": 27.0
+  },
+  {
+    "sweep": "n_inducing",
+    "n_inducing": 100,
+    "lr": 0.05,
+    "val_ece": 6.677714028676071e-05,
+    "val_auroc": 1.0,
+    "te_ece": 0.00012822875349661347,
+    "te_auroc": 1.0,
+    "final_loss": 0.0006385079554087192,
+    "time_s": 23.3
+  },
+  {
+    "sweep": "n_inducing",
+    "n_inducing": 200,
+    "lr": 0.05,
+    "val_ece": 7.315842440336111e-05,
+    "val_auroc": 1.0,
+    "te_ece": 0.00011967709065761697,
+    "te_auroc": 1.0,
+    "final_loss": 0.0006368254671550904,
+    "time_s": 30.6
+  },
+  {
+    "sweep": "n_inducing",
+    "n_inducing": 300,
+    "lr": 0.05,
+    "val_ece": 8.254221958730039e-05,
+    "val_auroc": 0.9999999999999999,
+    "te_ece": 0.00012156870916514685,
+    "te_auroc": 1.0,
+    "final_loss": 0.0006221450258848425,
+    "time_s": 35.9
+  },
+  {
+    "sweep": "n_inducing",
+    "n_inducing": 500,
+    "lr": 0.05,
+    "val_ece": 6.724723067925325e-05,
+    "val_auroc": 1.0,
+    "te_ece": 0.00010455824062225472,
+    "te_auroc": 1.0,
+    "final_loss": 0.0006193921291195377,
+    "time_s": 58.8
+  },
+  {
+    "sweep": "lr",
+    "n_inducing": 100,
+    "lr": 0.01,
+    "val_ece": 0.0001733471178252205,
+    "val_auroc": 1.0,
+    "te_ece": 0.00039599379025821865,
+    "te_auroc": 1.0,
+    "final_loss": 0.0010770151613089033,
+    "time_s": 22.6
+  },
+  {
+    "sweep": "lr",
+    "n_inducing": 100,
+    "lr": 0.03,
+    "val_ece": 8.799180839778512e-05,
+    "val_auroc": 1.0,
+    "te_ece": 0.00017592144319999856,
+    "te_auroc": 0.9999999999999999,
+    "final_loss": 0.0007230847453409318,
+    "time_s": 20.2
+  },
+  {
+    "sweep": "lr",
+    "n_inducing": 100,
+    "lr": 0.05,
+    "val_ece": 6.677714028676071e-05,
+    "val_auroc": 1.0,
+    "te_ece": 0.00012822875349661347,
+    "te_auroc": 1.0,
+    "final_loss": 0.0006385079554087192,
+    "time_s": 20.2
+  },
+  {
+    "sweep": "lr",
+    "n_inducing": 100,
+    "lr": 0.1,
+    "val_ece": 5.1168879774087825e-05,
+    "val_auroc": 1.0,
+    "te_ece": 8.622220952099527e-05,
+    "te_auroc": 1.0,
+    "final_loss": 0.0005777757072313104,
+    "time_s": 21.2
+  }
+]
