@@ -1,0 +1,20 @@
+{
+  "Threshold": {
+    "name": "Threshold",
+    "AUROC": 0.9999999999999999,
+    "AUPRC": 1.0,
+    "ECE": 0.06536541807962165
+  },
+  "LogReg": {
+    "name": "LogReg",
+    "AUROC": 1.0,
+    "AUPRC": 1.0,
+    "ECE": 0.00030483819005754613
+  },
+  "MLP": {
+    "name": "MLP",
+    "AUROC": 1.0,
+    "AUPRC": 1.0,
+    "ECE": 0.00606088025303697
+  }
+}

@@ -35,8 +35,10 @@ venv/
 .idea/
 *.swp
 
-# Figures (regenerated from scripts)
-results/figures/
+# Large binary model files (not tracked)
+results/*.pt
+results/*.pkl
+results/*.npy
 
 # Logs
 *.log
