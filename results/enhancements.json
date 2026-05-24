@@ -1,0 +1,48 @@
+{
+  "feature_lengthscales": {
+    "sat_elevation": 2.6737828254699707,
+    "elev_rate": 2.6737828254699707,
+    "z_score": 3.2167961597442627,
+    "log_z": 3.2167961597442627,
+    "harmonics": 3.2167961597442627,
+    "freq_deviation": 3.2167961597442627,
+    "hour_sin": 2.8641695976257324,
+    "hour_cos": 2.8641695976257324,
+    "campaign_day": 2.8641695976257324
+  },
+  "ece_comparison": {
+    "baseline_te_ece": 0.00012738140960481714,
+    "enhanced_te_ece": 6.211205080057336e-05,
+    "enhanced_val_ece": 3.819005405026923e-05,
+    "enhanced_auroc": 1.0,
+    "delta": -6.526935880424378e-05
+  },
+  "pass_level": {
+    "total_passes": 5526,
+    "positive_passes": 341,
+    "threshold": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "tp": 341,
+      "fp": 0,
+      "fn": 0
+    },
+    "gp_median": {
+      "precision": 1.0,
+      "recall": 0.9091,
+      "f1": 0.9524,
+      "tp": 310,
+      "fp": 0,
+      "fn": 31
+    },
+    "gp_max": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "tp": 341,
+      "fp": 0,
+      "fn": 0
+    }
+  }
+}

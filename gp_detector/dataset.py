@@ -27,14 +27,15 @@ import pandas as pd
 _DEFAULT_DB = Path(__file__).parents[2] / "starlink-passive-detection" / "data" / "detections.db"
 
 FEATURE_COLS = [
-    "z_score",
-    "log_z",
-    "harmonics",
-    "freq_deviation",
-    "sat_elevation",
-    "hour_sin",
-    "hour_cos",
-    "campaign_day",
+    "z_score",          # 0
+    "log_z",            # 1
+    "harmonics",        # 2
+    "freq_deviation",   # 3
+    "sat_elevation",    # 4
+    "hour_sin",         # 5
+    "hour_cos",         # 6
+    "campaign_day",     # 7
+    "elev_rate",        # 8  angular velocity (deg/s) — encodes Doppler broadening
 ]
 
 
@@ -59,6 +60,19 @@ def engineer_features(df: pd.DataFrame) -> pd.DataFrame:
     df["freq_deviation"] = np.abs(df["peak_freq_hz"] - 750.0) / 50.0
     df["harmonics"]     = df["harmonics"].clip(0, 3)
     df["log_z"]         = np.log1p(df["z_score"].clip(lower=0))
+
+    # Angular velocity (deg/s): dθ/dt within each satellite pass.
+    # Encodes Doppler broadening — fast-moving satellites cause PSD smearing.
+    # Pass boundary: same sat_name + time gap < 30 s.
+    df = df.sort_values("unix_time").reset_index(drop=True)
+    time_gap    = df["unix_time"].diff()
+    new_pass    = (df["sat_name"] != df["sat_name"].shift()) | (time_gap > 30) | time_gap.isna()
+    df["_pass"] = new_pass.cumsum()
+    g = df.groupby("_pass", sort=False)
+    df["elev_rate"] = (
+        g["sat_elevation"].diff() / g["unix_time"].diff()
+    ).fillna(0.0)
+    df.drop(columns="_pass", inplace=True)
 
     return df
 

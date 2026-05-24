@@ -3,7 +3,7 @@ Sparse Variational Gaussian Process (SVGP) binary classifier.
 
 Architecture
 ------------
-Kernel:  k_geom(elevation) + k_spec(z, harmonics, freq_dev) + k_time(hour, day)
+Kernel:  k_geom(elevation, elev_rate) + k_spec(z, harmonics, freq_dev) + k_time(hour, day)
          Each block is a ScaleKernel(RBFKernel) acting on its feature subset.
          The additive structure keeps geometric and spectral evidence separate
          and makes kernel lengthscales interpretable.
@@ -21,6 +21,7 @@ Feature index map (must match gp_detector.dataset.FEATURE_COLS):
   5  hour_sin
   6  hour_cos
   7  campaign_day
+  8  elev_rate          <- angular velocity (deg/s); encodes Doppler broadening
 """
 
 import numpy as np
@@ -35,9 +36,9 @@ from sklearn.cluster import MiniBatchKMeans
 from sklearn.preprocessing import StandardScaler
 
 
-GEOM_DIMS = [4]
-SPEC_DIMS = [0, 1, 2, 3]
-TIME_DIMS = [5, 6, 7]
+GEOM_DIMS = [4, 8]        # sat_elevation + elev_rate
+SPEC_DIMS = [0, 1, 2, 3]  # z_score, log_z, harmonics, freq_deviation
+TIME_DIMS = [5, 6, 7]     # hour_sin, hour_cos, campaign_day
 
 # Ablation variants
 # "full"       — additive: geom + spec + time  (default)
