@@ -39,23 +39,56 @@ GEOM_DIMS = [4]
 SPEC_DIMS = [0, 1, 2, 3]
 TIME_DIMS = [5, 6, 7]
 
+# Ablation variants
+# "full"       — additive: geom + spec + time  (default)
+# "no_elev"    — additive: spec + time only (elevation zeroed in data)
+# "single_rbf" — single RBF on all features, no additive structure
+# "spec_only"  — additive: spec + time, elevation column dropped from input
+VARIANTS = ("full", "no_elev", "single_rbf", "spec_only")
+
 
 class StarLinkSVGP(ApproximateGP):
-    """Physics-informed SVGP with additive kernel."""
+    """
+    Physics-informed SVGP with additive kernel.
+    variant controls the kernel structure for ablation studies.
+    """
 
-    def __init__(self, inducing_points: torch.Tensor):
+    def __init__(self, inducing_points: torch.Tensor, variant: str = "full"):
         var_dist     = CholeskyVariationalDistribution(inducing_points.size(0))
         var_strategy = VariationalStrategy(
             self, inducing_points, var_dist, learn_inducing_locations=True
         )
         super().__init__(var_strategy)
+        self.variant = variant
 
-        self.mean_module  = gpytorch.means.ConstantMean()
-        self.covar_module = (
-            ScaleKernel(RBFKernel(active_dims=torch.tensor(GEOM_DIMS)))
-            + ScaleKernel(RBFKernel(active_dims=torch.tensor(SPEC_DIMS)))
-            + ScaleKernel(RBFKernel(active_dims=torch.tensor(TIME_DIMS)))
-        )
+        self.mean_module = gpytorch.means.ConstantMean()
+
+        n_features = inducing_points.shape[1]
+
+        if variant == "full":
+            self.covar_module = (
+                ScaleKernel(RBFKernel(active_dims=torch.tensor(GEOM_DIMS)))
+                + ScaleKernel(RBFKernel(active_dims=torch.tensor(SPEC_DIMS)))
+                + ScaleKernel(RBFKernel(active_dims=torch.tensor(TIME_DIMS)))
+            )
+        elif variant == "no_elev":
+            # Same additive structure but geom block removed; elevation column
+            # is zeroed out in the data before training (see train_ablation)
+            self.covar_module = (
+                ScaleKernel(RBFKernel(active_dims=torch.tensor(SPEC_DIMS)))
+                + ScaleKernel(RBFKernel(active_dims=torch.tensor(TIME_DIMS)))
+            )
+        elif variant == "single_rbf":
+            # Single RBF across all features — no additive structure
+            self.covar_module = ScaleKernel(RBFKernel(ard_num_dims=n_features))
+        elif variant == "spec_only":
+            # Spectral + time features only, no geometric prior at all
+            self.covar_module = (
+                ScaleKernel(RBFKernel(active_dims=torch.tensor(SPEC_DIMS)))
+                + ScaleKernel(RBFKernel(active_dims=torch.tensor(TIME_DIMS)))
+            )
+        else:
+            raise ValueError(f"Unknown variant: {variant!r}. Choose from {VARIANTS}")
 
     def forward(self, x: torch.Tensor) -> gpytorch.distributions.MultivariateNormal:
         return gpytorch.distributions.MultivariateNormal(
@@ -69,6 +102,20 @@ def _init_inducing(X: np.ndarray, n: int, seed: int) -> torch.Tensor:
     return torch.tensor(km.cluster_centers_, dtype=torch.float32)
 
 
+def _apply_variant_mask(X: np.ndarray, variant: str) -> np.ndarray:
+    """
+    Prepare feature matrix for a given ablation variant.
+    - "no_elev"  : zero out the elevation column (index 4) so the kernel
+                   sees it but gets no signal from it
+    - "spec_only": same as no_elev for the data; kernel ignores it structurally
+    - others     : no change
+    """
+    if variant in ("no_elev", "spec_only"):
+        X = X.copy()
+        X[:, 4] = 0.0   # zero out sat_elevation
+    return X
+
+
 def train(
     X_train: np.ndarray,
     y_train: np.ndarray,
@@ -77,21 +124,28 @@ def train(
     batch_size: int = 512,
     lr: float = 0.05,
     seed: int = 42,
+    variant: str = "full",
     verbose: bool = True,
 ) -> tuple:
     """
     Train the SVGP classifier.
+
+    Args:
+        variant: one of "full", "no_elev", "single_rbf", "spec_only"
+                 Controls kernel structure and feature masking for ablations.
 
     Returns (model, likelihood, scaler, loss_history).
     The scaler is fit inside training so it travels with the model.
     """
     torch.manual_seed(seed)
 
+    X_train = _apply_variant_mask(X_train, variant)
+
     scaler   = StandardScaler()
     X_scaled = scaler.fit_transform(X_train).astype(np.float32)
 
     inducing = _init_inducing(X_scaled, n_inducing, seed)
-    model      = StarLinkSVGP(inducing)
+    model      = StarLinkSVGP(inducing, variant=variant)
     likelihood = BernoulliLikelihood()
     model.train(); likelihood.train()
 
@@ -133,8 +187,10 @@ def predict(
     """
     Returns (mean_prob, std_prob) as numpy arrays.
     std_prob is sqrt(p*(1-p)) under the Bernoulli posterior predictive.
+    Applies the same feature masking used during training.
     """
     model.eval(); likelihood.eval()
+    X = _apply_variant_mask(X, getattr(model, "variant", "full"))
     X_s = torch.tensor(scaler.transform(X).astype(np.float32))
 
     means, stds = [], []
