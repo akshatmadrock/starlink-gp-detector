@@ -1,21 +1,28 @@
 {
   "feature_lengthscales": {
-    "sat_elevation": 2.6737828254699707,
-    "elev_rate": 2.6737828254699707,
-    "z_score": 3.2167961597442627,
-    "log_z": 3.2167961597442627,
-    "harmonics": 3.2167961597442627,
-    "freq_deviation": 3.2167961597442627,
-    "hour_sin": 2.8641695976257324,
-    "hour_cos": 2.8641695976257324,
-    "campaign_day": 2.8641695976257324
+    "sat_elevation": 2.2575926780700684,
+    "elev_rate": 2.189985752105713,
+    "z_score": 1.484971284866333,
+    "log_z": 5.958958625793457,
+    "harmonics": 9.056771278381348,
+    "freq_deviation": 8.308294296264648,
+    "hour_sin": 2.4294533729553223,
+    "hour_cos": 2.418609380722046,
+    "campaign_day": 2.3430895805358887
   },
   "ece_comparison": {
     "baseline_te_ece": 0.00012738140960481714,
-    "enhanced_te_ece": 6.211205080057336e-05,
-    "enhanced_val_ece": 3.819005405026923e-05,
+    "enhanced_te_ece": 9.410616653019837e-05,
+    "enhanced_val_ece": 2.3956917372987744e-05,
     "enhanced_auroc": 1.0,
-    "delta": -6.526935880424378e-05
+    "delta": -3.3275243074618765e-05
+  },
+  "soft_analysis": {
+    "mean_prob": 0.24987541139125824,
+    "std_prob": 0.3437073528766632,
+    "mean_uncertainty": 0.20555099844932556,
+    "frac_above_half": 0.22878749400378115,
+    "n_soft": 70878
   },
   "pass_level": {
     "total_passes": 5526,

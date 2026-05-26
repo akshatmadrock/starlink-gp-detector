@@ -67,26 +67,31 @@ class StarLinkSVGP(ApproximateGP):
         n_features = inducing_points.shape[1]
 
         if variant == "full":
+            # ARD: each feature in a block gets its own lengthscale
             self.covar_module = (
-                ScaleKernel(RBFKernel(active_dims=torch.tensor(GEOM_DIMS)))
-                + ScaleKernel(RBFKernel(active_dims=torch.tensor(SPEC_DIMS)))
-                + ScaleKernel(RBFKernel(active_dims=torch.tensor(TIME_DIMS)))
+                ScaleKernel(RBFKernel(active_dims=torch.tensor(GEOM_DIMS),
+                                      ard_num_dims=len(GEOM_DIMS)))
+                + ScaleKernel(RBFKernel(active_dims=torch.tensor(SPEC_DIMS),
+                                        ard_num_dims=len(SPEC_DIMS)))
+                + ScaleKernel(RBFKernel(active_dims=torch.tensor(TIME_DIMS),
+                                        ard_num_dims=len(TIME_DIMS)))
             )
         elif variant == "no_elev":
-            # Same additive structure but geom block removed; elevation column
-            # is zeroed out in the data before training (see train_ablation)
             self.covar_module = (
-                ScaleKernel(RBFKernel(active_dims=torch.tensor(SPEC_DIMS)))
-                + ScaleKernel(RBFKernel(active_dims=torch.tensor(TIME_DIMS)))
+                ScaleKernel(RBFKernel(active_dims=torch.tensor(SPEC_DIMS),
+                                      ard_num_dims=len(SPEC_DIMS)))
+                + ScaleKernel(RBFKernel(active_dims=torch.tensor(TIME_DIMS),
+                                        ard_num_dims=len(TIME_DIMS)))
             )
         elif variant == "single_rbf":
             # Single RBF across all features — no additive structure
             self.covar_module = ScaleKernel(RBFKernel(ard_num_dims=n_features))
         elif variant == "spec_only":
-            # Spectral + time features only, no geometric prior at all
             self.covar_module = (
-                ScaleKernel(RBFKernel(active_dims=torch.tensor(SPEC_DIMS)))
-                + ScaleKernel(RBFKernel(active_dims=torch.tensor(TIME_DIMS)))
+                ScaleKernel(RBFKernel(active_dims=torch.tensor(SPEC_DIMS),
+                                      ard_num_dims=len(SPEC_DIMS)))
+                + ScaleKernel(RBFKernel(active_dims=torch.tensor(TIME_DIMS),
+                                        ard_num_dims=len(TIME_DIMS)))
             )
         else:
             raise ValueError(f"Unknown variant: {variant!r}. Choose from {VARIANTS}")
