@@ -47,11 +47,14 @@ This work replaces the hard threshold with a physics-informed Sparse Variational
 Gaussian Process (SVGP) that uses an additive kernel separating spectral,
 geometric, and temporal evidence.
 Across 619\,705 windows from a 14-day SDR campaign, the GP reduces Expected
-Calibration Error (ECE) by roughly $\mathbf{700\times}$ compared to the threshold
-detector ($9\times10^{-5}$ vs.\ $6.5\times10^{-2}$) while retaining perfect AUROC.
-An ablation study confirms the additive kernel structure is the key design decision,
-an angular-velocity feature activates the geometric prior, and pass-level
-aggregation of GP probabilities yields zero false positives at F1\,=\,0.952.
+Calibration Error (ECE) by roughly $\mathbf{230\times}$ compared to the threshold
+detector ($(9.99\!\pm\!0.50)\!\times\!10^{-5}$ vs.\ $2.3\times10^{-2}$, mean\,$\pm$\,std
+over 5 seeds) while retaining perfect AUROC.
+An ablation study confirms the additive kernel structure is the key design decision:
+a single RBF over all features is $5.7\times$ worse in ECE despite identical ranking.
+Pass-level aggregation of GP probabilities yields zero false positives at F1\,=\,0.952,
+and GP probabilities on held-out SOFT windows correlate strongly with whether the
+underlying satellite pass was independently confirmed positive.
 \end{abstract}
 
 %------------------------------------------------------------------------------
@@ -306,26 +309,25 @@ model with ARD and the angular-velocity feature $\dot{\theta}$.}
 \toprule
 Model & ECE ($\downarrow$) & AUROC ($\uparrow$) & Notes \\
 \midrule
-Threshold ($z \geq 4.0$)   & 0.0654              & 1.00 & Hard binary output \\
-Logistic Regression         & $3.0\times10^{-4}$  & 1.00 & Soft, linear \\
-MLP (calibrated)            & $6.1\times10^{-3}$  & 1.00 & 2-layer, isotonic \\
-GP (Phase 2)                & $7.0\times10^{-5}$  & 1.00 & Additive kernel, 8 features \\
-\textbf{GP (Enhanced)}      & $\mathbf{9\times10^{-5}}$ & 1.00 & +ARD, +$\dot{\theta}$ \\
+Threshold ($z \geq 4.0$)   & $2.31\times10^{-2}$              & 1.00 & Hard binary, sigmoid-smoothed \\
+Logistic Regression         & $2.15\times10^{-4}$  & 1.00 & Soft, linear, 9 features \\
+MLP (calibrated)            & $7.06\times10^{-3}$  & 1.00 & 2-layer, isotonic \\
+\textbf{GP (Enhanced)}      & $\mathbf{(9.99\!\pm\!0.50)\!\times\!10^{-5}}$ & 1.00 & +ARD, +$\dot{\theta}$, 5 seeds \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-All ECE values are single-seed point estimates. Across three independent
-training runs, GP ECE ranged from $7\times10^{-5}$ to $1.3\times10^{-4}$
-depending on random inducing-point initialization; the qualitative
-$700\times$ advantage over the threshold is consistent across seeds.
+The GP ECE is reported as mean\,$\pm$\,std over 5 independent random seeds
+with different inducing-point initializations: $(9.99\!\pm\!0.50)\!\times\!10^{-5}$.
+The low standard deviation ($<$\,5\% of the mean) confirms the model is stable
+across initialization; the $\sim\!230\times$ advantage over the threshold
+is consistent across all seeds.
 
-The GP achieves ECE roughly $\mathbf{700\times}$ lower than the threshold detector
-and about $3\times$ lower than logistic regression.
+The GP achieves ECE roughly $\mathbf{230\times}$ lower than the threshold detector
+and about $2.2\times$ lower than logistic regression.
 Figure~\ref{fig:ece_all} shows this on a log scale and Figure~\ref{fig:reliability}
-shows the reliability diagram: the GP's predicted probabilities track the diagonal
-closely, while the threshold detector's sigmoid-smoothed outputs are severely
-miscalibrated.
+shows a four-model reliability diagram: the GP's predicted probabilities track the
+diagonal closely, while the threshold and MLP are severely miscalibrated.
 
 \begin{figure}[h]
 \centering
@@ -336,12 +338,13 @@ miscalibrated.
 \end{subfigure}
 \hfill
 \begin{subfigure}[b]{0.48\textwidth}
-  \includegraphics[width=\linewidth]{../results/figures/reliability.png}
-  \caption{Reliability diagram: GP vs.\ threshold.}
+  \includegraphics[width=\linewidth]{../results/figures/reliability_4model.png}
+  \caption{Reliability diagram: all four models.}
   \label{fig:reliability}
 \end{subfigure}
 \caption{Calibration results. The GP's predicted probabilities are tightly
-calibrated; the threshold detector is severely overconfident at high confidence values.}
+calibrated; threshold and MLP are severely overconfident while logistic regression
+is better but still substantially worse than the GP.}
 \end{figure}
 
 \subsection{Ablation Study}
@@ -355,15 +358,16 @@ variants on identical data (200 inducing points, 60 epochs):
 
 \begin{figure}[h]
 \centering
-\includegraphics[width=0.68\textwidth]{../results/figures/ablation_ece.png}
-\caption{Test ECE by ablation variant. Removing the additive structure
-(single\_rbf) degrades calibration by $5\times$ despite identical AUROC.}
+\includegraphics[width=0.68\textwidth]{../results/figures/ablation_ece_multiseed.png}
+\caption{Test ECE by ablation variant across 5 random seeds (mean $\pm$ std error bars).
+Removing the additive structure (single\_rbf) degrades calibration by $5.7\times$
+despite identical AUROC.}
 \label{fig:ablation}
 \end{figure}
 
 Figure~\ref{fig:ablation} shows that \textbf{the additive kernel structure is
-the critical design choice}: the single\_rbf ECE is $6.4\times10^{-4}$, five
-times worse than the additive variants.
+the critical design choice}: the single\_rbf ECE is $(5.67\!\pm\!0.74)\!\times\!10^{-4}$
+(mean $\pm$ std over 5 seeds), $5.7\times$ worse than the additive variants.
 The elevation block alone contributes negligibly in ECE terms (full $\approx$ no\_elev),
 which is expected: our dataset covers only high-elevation passes (49--90°) because
 the TLE pipeline stores the highest-overhead satellite at each timestamp, leaving
@@ -445,6 +449,31 @@ $z \in [3.5, 4.0)$ & 16{,}138 & 0.836 & 99.8\% \\
 \end{tabular}
 \end{table}
 
+\paragraph{SOFT-within-pass validation.}
+The z-bin stratification above relies only on the z-score ordering already
+embedded in the labels. A stronger test uses pass-level ground truth
+independently of z-score: each satellite overpass is labeled positive if it
+contains at least one HARD window, negative otherwise. Running the GP on all
+70,878 SOFT windows and grouping by whether their enclosing pass is positive or
+negative yields a clear separation without any additional supervision.
+SOFT windows inside positive passes score mean $0.523$ (frac.\,$>0.5$: $52.9\%$,
+$n\!=\!9{,}885$); SOFT windows inside negative passes score mean $0.206$
+(frac.\,$>0.5$: $18.0\%$, $n\!=\!60{,}993$).
+The GP assigns systematically higher probability to ambiguous windows that
+belong to confirmed satellite overpasses, despite never seeing SOFT labels or
+pass membership during training.
+Figure~\ref{fig:soft_pass} visualises this distribution.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.80\textwidth]{../results/figures/soft_pass_validation.png}
+\caption{GP detection probability for SOFT windows split by pass positivity.
+Windows in positive passes (satellite confirmed overhead by a HARD window
+elsewhere in the pass) score substantially higher than those in negative passes,
+validating that GP probabilities are physically meaningful on held-out data.}
+\label{fig:soft_pass}
+\end{figure}
+
 \subsection{Pass-Level Aggregation}
 
 Threshold's F1=1.0 on pass-level detection is tautological, since positive
@@ -490,11 +519,12 @@ detection pipeline with a physics-informed Sparse Variational GP. The key
 contributions are:
 
 \begin{enumerate}
-  \item \textbf{Calibration.} ECE $\sim700\times$ lower than the threshold detector,
-        showing the GP's probability outputs are trustworthy.
-  \item \textbf{Additive kernel design.} The ablation confirms this is the critical
-        structural choice; a single RBF is $5\times$ worse in ECE despite identical
-        ranking performance.
+  \item \textbf{Calibration.} ECE $\sim230\times$ lower than the threshold detector
+        ($(9.99\!\pm\!0.50)\!\times\!10^{-5}$ vs.\ $2.3\!\times\!10^{-2}$, 5 seeds),
+        showing GP probability outputs are trustworthy.
+  \item \textbf{Additive kernel design.} Ablation over 5 seeds confirms this is the
+        critical structural choice; a single RBF is $5.7\times$ worse in ECE despite
+        identical ranking performance.
   \item \textbf{Physics-informed features.} Adding angular velocity $\dot{\theta}$
         activates the geometric kernel block. ARD lengthscales confirm the model
         learned to use this feature, with $\ell_{\dot{\theta}} = 2.19$ vs.\
@@ -506,9 +536,10 @@ contributions are:
 \paragraph{Limitations.}
 Several caveats apply to the results above:
 \begin{itemize}
-  \item No ground truth for SOFT windows; the z-bin stratification provides
-        indirect evidence but not validation against an independent oracle.
-        Future work could cross-validate with a second SDR at a different location.
+  \item SOFT window validation is indirect: z-bin stratification and pass-level
+        membership tests confirm physically sensible behavior, but an independent
+        oracle (e.g., a collocated SDR or verified TLE match) would be stronger.
+        Cross-validation from a second receiver site is the natural next step.
   \item Dataset coverage is limited to high-elevation passes (49--90 degrees)
         because the pipeline stores only the highest-overhead satellite at each
         timestamp. A future campaign should record all visible satellites and
@@ -538,6 +569,9 @@ reliability diagram, and generates the ECE comparison. Notebook 04 (Ablations)
 loads \texttt{results/ablation.json} and produces Figure~\ref{fig:ablation}.
 The enhancements pipeline (\texttt{scripts/enhancements.py}) generates
 Figures~\ref{fig:lengthscales}--\ref{fig:soft_hist} and the lengthscale table.
+The final experiments script (\texttt{scripts/final\_experiments.py}) runs the
+5-seed ablation sweep, SOFT-within-pass validation, and 4-model reliability diagram
+(Figures~\ref{fig:ablation},~\ref{fig:soft_pass},~\ref{fig:reliability}).
 Raw SDR data (approximately 500\,GB of IQ recordings) is not included; all
 experiments run on the processed features in the SQLite database
 \texttt{detections.db}, which is also excluded from the repo due to size.
