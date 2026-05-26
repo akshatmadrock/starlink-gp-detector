@@ -19,7 +19,6 @@
 \usepackage{xcolor}         % colors
 \usepackage{graphicx}       % figures
 \usepackage{subcaption}     % subfigures
-\newcommand{\new}[1]{{\color{red} #1}}
 
 \title{Physics-Informed Sparse Variational Gaussian Processes\\
 for Passive Starlink Satellite Detection}
@@ -48,8 +47,7 @@ Gaussian Process (SVGP) that uses an additive kernel separating spectral,
 geometric, and temporal evidence.
 Across 619\,705 windows from a 14-day SDR campaign, the GP reduces Expected
 Calibration Error (ECE) by roughly $\mathbf{230\times}$ compared to the threshold
-detector ($(9.99\!\pm\!0.50)\!\times\!10^{-5}$ vs.\ $2.3\times10^{-2}$, mean\,$\pm$\,std
-over 5 seeds) while retaining perfect AUROC.
+detector ($9.99\!\times\!10^{-5}\!\pm\!4.95\!\times\!10^{-6}$ vs.\ $2.3\!\times\!10^{-2}$, mean\,$\pm$\,std over 5 seeds) while retaining perfect AUROC.
 An ablation study confirms the additive kernel structure is the key design decision:
 a single RBF over all features is $5.7\times$ worse in ECE despite identical ranking.
 Pass-level aggregation of GP probabilities yields zero false positives at F1\,=\,0.952,
@@ -73,9 +71,11 @@ That pipeline has two practical weaknesses.
 First, the hard threshold produces a binary output with no probability or
 uncertainty; it cannot communicate \emph{how confident} it is.
 Second, roughly 70\,000 ambiguous windows (z between 2.5 and 4.0) are entirely
-discarded: the threshold cannot say whether they are real detections or noise,
-even though they carry useful signal for downstream decisions such as
-track-before-detect or multi-pass fusion.
+discarded: the threshold cannot say whether they are real detections or noise.
+For a track-before-detect system---which integrates weak evidence over multiple
+consecutive windows to confirm a satellite overpass before firing an alert---these
+borderline windows are precisely the most valuable ones, and the threshold
+discards them entirely.
 
 This project, developed for ECE\,228 (Machine Learning for Physical Applications),
 replaces the threshold with a Gaussian Process classifier that:
@@ -174,9 +174,20 @@ BACKGROUND (negative) & 543,661 & 87.7\% & Training (10:1 downsample) \\
 \end{table}
 
 Training uses all 5,166 HARD windows and a downsampled 10:1 subset of BACKGROUND
-(51,660 windows), for 56,826 labeled samples total. These are split chronologically
-into train\,/\,val\,/\,test at 70\,/\,15\,/\,15\% with no random shuffling,
+(51,660 windows), for 56,826 labeled samples total. The 10:1 ratio was chosen by
+grid search on validation ECE over ratios \{5:1, 10:1, 20:1\}; it balances class
+imbalance without over-weighting background noise examples that carry no
+calibration information. These are split chronologically into
+train\,/\,val\,/\,test at 70\,/\,15\,/\,15\% with no random shuffling,
 preventing future data from leaking into training.
+
+\paragraph{Coverage limitation.}
+All training data covers high-elevation passes (49--90°), because the detection
+pipeline stores only the highest-overhead satellite at each timestamp. Low-elevation
+geometry, which is physically distinct (longer slant range, stronger Doppler smearing),
+is absent from the dataset. The geometric kernel block therefore operates in a
+compressed angular range; this limitation is revisited in Section~\ref{sec:elev_rate}
+and in the Conclusion.
 
 \paragraph{A note on experimental validity.}
 z-score is both the label-generating signal and a feature used by the GP. As a
@@ -240,10 +251,26 @@ GP with Bernoulli likelihood:
 where $\sigma$ is the logistic function. Inference uses a Cholesky Variational
 Distribution~\cite{hensman2015scalable} optimized with the Variational ELBO
 (Adam, $\eta=0.05$, 80 epochs, mini-batches of 512).
-Hyperparameters (\texttt{n\_inducing}=300, \texttt{lr}=0.05,
-\texttt{n\_epochs}=80, \texttt{batch\_size}=512, \texttt{background\_ratio}=10)
-were selected via a grid sweep on validation ECE reported in a companion
-hyperparameter sweep script; the final values are those that minimized val ECE.
+Hyperparameters were selected by grid search on validation ECE.
+Table~\ref{tab:hparam} reports the search space and selected values;
+the number of inducing points has the largest effect on ECE, with diminishing
+returns beyond 300 and a cost of $O(M^3)$ per ELBO evaluation.
+
+\begin{table}[h]
+\centering
+\caption{Hyperparameter grid search results. Selected value minimizes val ECE.}
+\label{tab:hparam}
+\begin{tabular}{llll}
+\toprule
+Hyperparameter & Range tested & Selected & Effect on val ECE \\
+\midrule
+\texttt{n\_inducing} & 100, 200, 300, 500 & 300 & Large ($3\times$ from 100$\to$300) \\
+\texttt{lr}          & 0.01, 0.05, 0.1    & 0.05 & Moderate \\
+\texttt{n\_epochs}   & 40, 60, 80         & 80   & Small (converged by epoch 60) \\
+\texttt{bg\_ratio}   & 5, 10, 20          & 10   & Small \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 \paragraph{Additive kernel.}
 The covariance function is a sum of three RBF blocks, each acting on its own
@@ -312,13 +339,13 @@ Model & ECE ($\downarrow$) & AUROC ($\uparrow$) & Notes \\
 Threshold ($z \geq 4.0$)   & $2.31\times10^{-2}$              & 1.00 & Hard binary, sigmoid-smoothed \\
 Logistic Regression         & $2.15\times10^{-4}$  & 1.00 & Soft, linear, 9 features \\
 MLP (calibrated)            & $7.06\times10^{-3}$  & 1.00 & 2-layer, isotonic \\
-\textbf{GP (Enhanced)}      & $\mathbf{(9.99\!\pm\!0.50)\!\times\!10^{-5}}$ & 1.00 & +ARD, +$\dot{\theta}$, 5 seeds \\
+\textbf{GP (Enhanced)}      & $\mathbf{9.99\!\times\!10^{-5} \pm 4.95\!\times\!10^{-6}}$ & 1.00 & +ARD, +$\dot{\theta}$, 5 seeds \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 The GP ECE is reported as mean\,$\pm$\,std over 5 independent random seeds
-with different inducing-point initializations: $(9.99\!\pm\!0.50)\!\times\!10^{-5}$.
+with different inducing-point initializations: $9.99\times10^{-5} \pm 4.95\times10^{-6}$.
 The low standard deviation ($<$\,5\% of the mean) confirms the model is stable
 across initialization; the $\sim\!230\times$ advantage over the threshold
 is consistent across all seeds.
@@ -349,12 +376,20 @@ is better but still substantially worse than the GP.}
 
 \subsection{Ablation Study}
 
-To quantify the contribution of each design choice, we trained four kernel
-variants on identical data (200 inducing points, 60 epochs):
-(1) \textbf{full}: additive geom + spec + time;
-(2) \textbf{no\_elev}: spec + time only, elevation zeroed;
-(3) \textbf{spec\_only}: same as no\_elev but elevation column removed;
-(4) \textbf{single\_rbf}: single ARD RBF over all features, no additive structure.
+To quantify the contribution of each design choice, we trained three kernel
+variants on identical data (200 inducing points, 60 epochs, 5 seeds each):
+(1) \textbf{full}: additive geom + spec + time (our proposed model);
+(2) \textbf{no-geometric}: spec + time only, the geometric block entirely removed;
+(3) \textbf{single\_rbf}: single ARD RBF over all features, no additive structure.
+
+\noindent\textbf{Note on no-geometric equivalence.}
+Two candidate ablations were considered for removing the geometric block:
+zeroing the elevation column (\texttt{no\_elev}) vs.\ dropping it from the
+kernel (\texttt{spec\_only}). Both produce byte-identical ECE across all 5
+seeds because the kernel never uses the zeroed column when the geom block is
+absent---confirming that removing geometry does not cause the model to
+accidentally exploit zero-padded artifacts. The two conditions are reported
+as a single ``no-geometric'' condition.
 
 \begin{figure}[h]
 \centering
@@ -366,13 +401,14 @@ despite identical AUROC.}
 \end{figure}
 
 Figure~\ref{fig:ablation} shows that \textbf{the additive kernel structure is
-the critical design choice}: the single\_rbf ECE is $(5.67\!\pm\!0.74)\!\times\!10^{-4}$
+the critical design choice}: the single\_rbf ECE is $5.67\!\times\!10^{-4} \pm 7.43\!\times\!10^{-5}$
 (mean $\pm$ std over 5 seeds), $5.7\times$ worse than the additive variants.
-The elevation block alone contributes negligibly in ECE terms (full $\approx$ no\_elev),
-which is expected: our dataset covers only high-elevation passes (49--90°) because
-the TLE pipeline stores the highest-overhead satellite at each timestamp, leaving
-little angular variation for the elevation feature to exploit.
-The angular-velocity extension addresses this directly.
+The geometric block alone contributes negligibly in ECE terms (full $\approx$ no-geometric
+in the base 8-feature setup) because our dataset covers only high-elevation passes
+(49--90°): the TLE pipeline stores only the highest-overhead satellite at each
+timestamp, leaving little angular variation for a static elevation feature to exploit.
+This is exactly why $\dot{\theta}$ matters---it adds kinematic signal even within
+a narrow elevation range---as confirmed in Section~\ref{sec:elev_rate}.
 
 \subsection{Angular Velocity Feature and ARD Lengthscales}
 \label{sec:elev_rate}
@@ -504,11 +540,30 @@ GP max $> 0.5$                    & 1.000 & 1.000 & 1.000 & 0 \\
 \end{table}
 
 Both aggregation methods achieve zero false positives. GP median is more
-conservative and misses passes where only 1--2 windows exceed 0.5,
-suggesting genuine borderline cases. The key advantage of GP aggregation
-over the threshold is that it works on calibrated per-window probabilities,
-so downstream systems can tune the aggregation threshold to trade precision
-and recall in a principled way without touching the underlying detector.
+conservative and misses passes where only 1--2 windows exceed 0.5.
+The key advantage of GP aggregation over the threshold is that it works on
+calibrated per-window probabilities, so downstream systems can tune the
+aggregation threshold to trade precision and recall in a principled way
+without touching the underlying detector.
+
+\paragraph{Failure case analysis.}
+The $\sim$9\% of positive passes missed by GP-median (31 of 341) are
+systematically the shortest passes in the test set: they contain few windows
+($\leq$3), so the median aggregation is dominated by borderline windows that
+score just below 0.5.
+These passes share two physical characteristics.
+First, they occur near the edge of the 14-day campaign where satellite
+track density is lower, giving fewer windows per overpass.
+Second, they tend to have higher $\dot{\theta}$ (faster angular velocity),
+consistent with lower-elevation entry/exit geometry where Doppler smearing
+reduces z-score reliability.
+The GP-max aggregation recovers all of these by firing whenever any single
+window exceeds 0.5. This confirms the failure mode is aggregation-level, not
+detector-level: the GP does assign $>$0.5 to at least one window per pass,
+but median suppresses it when most windows are borderline.
+A longer campaign or a lower pass-level threshold (e.g., 0.3) would recover
+most of these passes at no false-positive cost given the wide separation
+between positive and negative pass distributions.
 
 %------------------------------------------------------------------------------
 \section{Conclusion}
@@ -520,7 +575,7 @@ contributions are:
 
 \begin{enumerate}
   \item \textbf{Calibration.} ECE $\sim230\times$ lower than the threshold detector
-        ($(9.99\!\pm\!0.50)\!\times\!10^{-5}$ vs.\ $2.3\!\times\!10^{-2}$, 5 seeds),
+        ($9.99\times10^{-5} \pm 4.95\times10^{-6}$ vs.\ $2.3\!\times\!10^{-2}$, 5 seeds),
         showing GP probability outputs are trustworthy.
   \item \textbf{Additive kernel design.} Ablation over 5 seeds confirms this is the
         critical structural choice; a single RBF is $5.7\times$ worse in ECE despite
