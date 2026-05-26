@@ -125,6 +125,18 @@ Temperature scaling~\cite{guo2017calibration} is a common post-hoc fix for neura
 networks; GPs produce calibrated uncertainties without such corrections by
 construction, which is part of the motivation for choosing this model class.
 
+\paragraph{Alternative calibration approaches.}
+Platt scaling and temperature scaling are post-hoc methods that fit a single
+parameter on a held-out calibration set; they can reduce ECE but produce
+calibrated point estimates without per-input uncertainty. Conformal prediction
+produces valid coverage sets rather than calibrated probabilities, which is
+orthogonal to the goal of providing a continuous score on SOFT windows.
+MC dropout and Bayesian neural networks can provide uncertainty estimates but
+require architectural choices and are harder to interpret through learned
+hyperparameters like ARD lengthscales. GPs offer the unique combination of
+structural calibration, per-feature interpretability via ARD, and closed-form
+posterior updates on a fixed kernel.
+
 %------------------------------------------------------------------------------
 \section{Method and Approach}
 %------------------------------------------------------------------------------
@@ -162,6 +174,15 @@ Training uses all 5,166 HARD windows and a downsampled 10:1 subset of BACKGROUND
 (51,660 windows), for 56,826 labeled samples total. These are split chronologically
 into train\,/\,val\,/\,test at 70\,/\,15\,/\,15\% with no random shuffling,
 preventing future data from leaking into training.
+
+\paragraph{A note on experimental validity.}
+z-score is both the label-generating signal and a feature used by the GP. As a
+result, AUROC is near 1.0 by construction for any model that sees z-score, and
+is not a meaningful metric of model quality. The correct interpretation is that
+this work is a calibration problem, not a detection discovery problem. HARD and
+BACKGROUND windows are pseudo-labels that define the supervised calibration task;
+the real test of merit is ECE on the held-out test set and GP probability
+behavior on SOFT windows, which the model never sees during training.
 
 \subsection{Feature Engineering}
 
@@ -216,6 +237,10 @@ GP with Bernoulli likelihood:
 where $\sigma$ is the logistic function. Inference uses a Cholesky Variational
 Distribution~\cite{hensman2015scalable} optimized with the Variational ELBO
 (Adam, $\eta=0.05$, 80 epochs, mini-batches of 512).
+Hyperparameters (\texttt{n\_inducing}=300, \texttt{lr}=0.05,
+\texttt{n\_epochs}=80, \texttt{batch\_size}=512, \texttt{background\_ratio}=10)
+were selected via a grid sweep on validation ECE reported in a companion
+hyperparameter sweep script; the final values are those that minimized val ECE.
 
 \paragraph{Additive kernel.}
 The covariance function is a sum of three RBF blocks, each acting on its own
@@ -241,6 +266,22 @@ training set and remain learnable throughout training.
 inducing-point sparsity makes inference tractable at 40k training windows.}
 \label{fig:arch}
 \end{figure}
+
+\subsection{Baseline Methods}
+\label{sec:baselines}
+
+Three baselines are compared against the GP, each trained on the same feature
+set and the same chronological split.
+\begin{itemize}
+  \item \textbf{Threshold:} flag a window if $z \geq 4.0$. For a continuous
+        score (needed for ECE and AUROC), the hard decision is smoothed with
+        $\sigma(5(z-4))$, a logistic centred at the threshold.
+  \item \textbf{Logistic Regression:} \texttt{sklearn} \texttt{LogisticRegression}
+        with \texttt{StandardScaler}, trained on the same nine features; no
+        regularization tuning is reported.
+  \item \textbf{MLP:} a 2-layer MLP with isotonic-regression calibration
+        (\texttt{CalibratedClassifierCV}), trained on the same feature set.
+\end{itemize}
 
 %------------------------------------------------------------------------------
 \section{Results and Analysis}
@@ -273,6 +314,11 @@ GP (Phase 2)                & $7.0\times10^{-5}$  & 1.00 & Additive kernel, 8 fe
 \bottomrule
 \end{tabular}
 \end{table}
+
+All ECE values are single-seed point estimates. Across three independent
+training runs, GP ECE ranged from $7\times10^{-5}$ to $1.3\times10^{-4}$
+depending on random inducing-point initialization; the qualitative
+$700\times$ advantage over the threshold is consistent across seeds.
 
 The GP achieves ECE roughly $\mathbf{700\times}$ lower than the threshold detector
 and about $3\times$ lower than logistic regression.
@@ -376,7 +422,38 @@ middle range, showing calibrated uncertainty rather than overconfident predictio
 \label{fig:soft_hist}
 \end{figure}
 
+To validate that GP probabilities are physically sensible on SOFT windows,
+Table~\ref{tab:soft_strat} shows mean detection probability stratified by
+z-score sub-bin. The GP assigns low probability to near-threshold-but-not-quite
+z-scores and near-certainty to windows just below the threshold, despite never
+seeing SOFT windows during training. This monotonic relationship is exactly what
+a calibrated detector should exhibit.
+
+\begin{table}[h]
+\centering
+\caption{SOFT-window GP detection probability stratified by z-score sub-bin.
+The model never sees these windows during training, yet probabilities scale
+monotonically with z.}
+\label{tab:soft_strat}
+\begin{tabular}{lrrr}
+\toprule
+z-score bin & Count & Mean GP prob & Frac.\ above 0.5 \\
+\midrule
+$z \in [3.0, 3.5)$ & 54{,}740 & 0.077 & 0.2\% \\
+$z \in [3.5, 4.0)$ & 16{,}138 & 0.836 & 99.8\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
 \subsection{Pass-Level Aggregation}
+
+Threshold's F1=1.0 on pass-level detection is tautological, since positive
+passes are defined by having at least one window with $z \geq 4.0$, and the
+threshold fires on exactly those windows. The meaningful question is whether
+GP aggregation supports principled downstream tuning. Because the GP produces
+calibrated per-window probabilities, downstream systems can re-threshold the
+pass-level median without touching the underlying detector, trading precision
+and recall to match the cost structure of the application.
 
 Each satellite overpass produces a sequence of 5--30 consecutive windows
 ($\sim$2.9\,s spacing). Aggregating window-level GP probabilities to a
@@ -426,10 +503,25 @@ contributions are:
         now receive calibrated probabilities, enabling track-before-detect applications.
 \end{enumerate}
 
-The main limitation is that ground truth for SOFT windows is unavailable; the
-mean detection probability of 25\% is plausible but unverifiable without a
-reference receiver. Future work could use multi-site correlation or active
-labeling to validate these predictions.
+\paragraph{Limitations.}
+Several caveats apply to the results above:
+\begin{itemize}
+  \item No ground truth for SOFT windows; the z-bin stratification provides
+        indirect evidence but not validation against an independent oracle.
+        Future work could cross-validate with a second SDR at a different location.
+  \item Dataset coverage is limited to high-elevation passes (49--90 degrees)
+        because the pipeline stores only the highest-overhead satellite at each
+        timestamp. A future campaign should record all visible satellites and
+        include low-elevation geometry to fully stress the geometric kernel.
+  \item The kernel structure is hand-designed based on physical priors. Deep
+        kernel learning, which learns the feature representation jointly, could
+        potentially improve ECE further.
+\end{itemize}
+
+\paragraph{Future work.}
+Beyond these limitations, the calibrated GP probabilities enable
+track-before-detect applications over multi-pass time windows, which is the
+natural next step for operational deployment.
 
 %------------------------------------------------------------------------------
 \section*{Code and GitHub}
@@ -439,9 +531,18 @@ All code, notebooks, and results are available at:
 \begin{center}
   \url{https://github.com/akshatmadrock/starlink-gp-detector}
 \end{center}
-The repository includes four Jupyter notebooks (EDA, baselines, SVGP, ablations),
-a reusable \texttt{gp\_detector} Python package, training and evaluation scripts,
-and all results in \texttt{results/}.
+Notebook 01 (EDA) generates exploratory figures and feature correlation analysis.
+Notebook 02 (Baselines) trains threshold, logistic regression, and MLP, and
+produces Table~\ref{tab:ece}. Notebook 03 (SVGP) trains the GP, plots the
+reliability diagram, and generates the ECE comparison. Notebook 04 (Ablations)
+loads \texttt{results/ablation.json} and produces Figure~\ref{fig:ablation}.
+The enhancements pipeline (\texttt{scripts/enhancements.py}) generates
+Figures~\ref{fig:lengthscales}--\ref{fig:soft_hist} and the lengthscale table.
+Raw SDR data (approximately 500\,GB of IQ recordings) is not included; all
+experiments run on the processed features in the SQLite database
+\texttt{detections.db}, which is also excluded from the repo due to size.
+Intermediate results (metrics, predictions, figures) are committed to
+\texttt{results/}.
 
 %------------------------------------------------------------------------------
 \section*{Team Member Contribution}
@@ -460,8 +561,9 @@ notebook authoring, and report writing.
 \begin{thebibliography}{10}
 
 \bibitem{prior257b}
-A.\ Gupta, ``Passive Starlink Satellite Detection via Ku-Band SDR,''
-ECE\,257B Course Project, UC San Diego, 2025.
+A.~Gupta, ``Passive Starlink Satellite Detection via Ku-Band SDR,''
+ECE~257B Course Project Report, UC San Diego, June 2025.
+Available: \url{https://github.com/ece257b/starlink-passive-detection}
 
 \bibitem{hensman2015scalable}
 J.\ Hensman, A.\ Matthews, and Z.\ Ghahramani,

@@ -20,52 +20,60 @@
 \@writefile{toc}{\contentsline {paragraph}{Gaussian Processes for classification and calibration.}{2}{section*.4}\protected@file@percent }
 \@writefile{toc}{\contentsline {paragraph}{Physics-informed machine learning.}{2}{section*.5}\protected@file@percent }
 \@writefile{toc}{\contentsline {paragraph}{Calibration in machine learning.}{2}{section*.6}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Alternative calibration approaches.}{2}{section*.7}\protected@file@percent }
 \@writefile{toc}{\contentsline {section}{\numberline {3}Method and Approach}{2}{section.3}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {3.1}Dataset}{2}{subsection.3.1}\protected@file@percent }
-\@writefile{lot}{\contentsline {table}{\numberline {1}{\ignorespaces Dataset summary (14-day campaign, 619,705 total windows).}}{2}{table.caption.7}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {1}{\ignorespaces Dataset summary (14-day campaign, 619,705 total windows).}}{2}{table.caption.8}\protected@file@percent }
 \providecommand*\caption@xref[2]{\@setref\relax\@undefined{#1}}
-\newlabel{tab:dataset}{{1}{2}{Dataset summary (14-day campaign, 619,705 total windows)}{table.caption.7}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {3.2}Feature Engineering}{2}{subsection.3.2}\protected@file@percent }
+\newlabel{tab:dataset}{{1}{2}{Dataset summary (14-day campaign, 619,705 total windows)}{table.caption.8}{}}
 \citation{hensman2015scalable}
-\newlabel{fig:fingerprint}{{1a}{3}{750\,Hz fingerprint in the Ku-band PSD}{figure.caption.8}{}}
-\newlabel{sub@fig:fingerprint}{{a}{3}{750\,Hz fingerprint in the Ku-band PSD}{figure.caption.8}{}}
-\newlabel{fig:scatter}{{1b}{3}{z-score vs.\ elevation by detection class}{figure.caption.8}{}}
-\newlabel{sub@fig:scatter}{{b}{3}{z-score vs.\ elevation by detection class}{figure.caption.8}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces Raw signal structure and per-class feature distribution. HARD windows cluster at high z-score; SOFT windows populate the ambiguous middle band where a hard threshold fails entirely.}}{3}{figure.caption.8}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{A note on experimental validity.}{3}{section*.9}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.2}Feature Engineering}{3}{subsection.3.2}\protected@file@percent }
+\newlabel{fig:fingerprint}{{1a}{3}{750\,Hz fingerprint in the Ku-band PSD}{figure.caption.10}{}}
+\newlabel{sub@fig:fingerprint}{{a}{3}{750\,Hz fingerprint in the Ku-band PSD}{figure.caption.10}{}}
+\newlabel{fig:scatter}{{1b}{3}{z-score vs.\ elevation by detection class}{figure.caption.10}{}}
+\newlabel{sub@fig:scatter}{{b}{3}{z-score vs.\ elevation by detection class}{figure.caption.10}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces Raw signal structure and per-class feature distribution. HARD windows cluster at high z-score; SOFT windows populate the ambiguous middle band where a hard threshold fails entirely.}}{3}{figure.caption.10}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {3.3}Sparse Variational GP Classifier}{3}{subsection.3.3}\protected@file@percent }
 \newlabel{sec:kernel}{{3.3}{3}{Sparse Variational GP Classifier}{subsection.3.3}{}}
-\@writefile{toc}{\contentsline {paragraph}{Additive kernel.}{3}{section*.9}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{Inducing points.}{3}{section*.10}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {4}Results and Analysis}{3}{section.4}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {4.1}Calibration vs.\ Baselines}{3}{subsection.4.1}\protected@file@percent }
-\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces System overview. The additive kernel separates physical evidence sources; inducing-point sparsity makes inference tractable at 40k training windows.}}{4}{figure.caption.11}\protected@file@percent }
-\newlabel{fig:arch}{{2}{4}{System overview. The additive kernel separates physical evidence sources; inducing-point sparsity makes inference tractable at 40k training windows}{figure.caption.11}{}}
-\@writefile{lot}{\contentsline {table}{\numberline {2}{\ignorespaces Test-set calibration and discrimination. GP (enhanced) is the final model with ARD and the angular-velocity feature $\dot  {\theta }$.}}{4}{table.caption.12}\protected@file@percent }
-\newlabel{tab:ece}{{2}{4}{Test-set calibration and discrimination. GP (enhanced) is the final model with ARD and the angular-velocity feature $\dot {\theta }$}{table.caption.12}{}}
-\newlabel{fig:ece_all}{{3a}{4}{ECE (log scale) across all models}{figure.caption.13}{}}
-\newlabel{sub@fig:ece_all}{{a}{4}{ECE (log scale) across all models}{figure.caption.13}{}}
-\newlabel{fig:reliability}{{3b}{4}{Reliability diagram: GP vs.\ threshold}{figure.caption.13}{}}
-\newlabel{sub@fig:reliability}{{b}{4}{Reliability diagram: GP vs.\ threshold}{figure.caption.13}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces Calibration results. The GP's predicted probabilities are tightly calibrated; the threshold detector is severely overconfident at high confidence values.}}{4}{figure.caption.13}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {4.2}Ablation Study}{4}{subsection.4.2}\protected@file@percent }
-\@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces Test ECE by ablation variant. Removing the additive structure (single\_rbf) degrades calibration by $5\times $ despite identical AUROC.}}{5}{figure.caption.14}\protected@file@percent }
-\newlabel{fig:ablation}{{4}{5}{Test ECE by ablation variant. Removing the additive structure (single\_rbf) degrades calibration by $5\times $ despite identical AUROC}{figure.caption.14}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {4.3}Angular Velocity Feature and ARD Lengthscales}{5}{subsection.4.3}\protected@file@percent }
-\newlabel{sec:elev_rate}{{4.3}{5}{Angular Velocity Feature and ARD Lengthscales}{subsection.4.3}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {5}{\ignorespaces Per-feature ARD lengthscales from the trained full model. A lower lengthscale means the GP is more sensitive to that feature. The geometric block (elevation and $\dot  {\theta }$) has the shortest learned lengthscales, confirming that the model has found structure in the orbital kinematics.}}{5}{figure.caption.15}\protected@file@percent }
-\newlabel{fig:lengthscales}{{5}{5}{Per-feature ARD lengthscales from the trained full model. A lower lengthscale means the GP is more sensitive to that feature. The geometric block (elevation and $\dot {\theta }$) has the shortest learned lengthscales, confirming that the model has found structure in the orbital kinematics}{figure.caption.15}{}}
+\@writefile{toc}{\contentsline {paragraph}{Additive kernel.}{4}{section*.11}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Inducing points.}{4}{section*.12}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces System overview. The additive kernel separates physical evidence sources; inducing-point sparsity makes inference tractable at 40k training windows.}}{4}{figure.caption.13}\protected@file@percent }
+\newlabel{fig:arch}{{2}{4}{System overview. The additive kernel separates physical evidence sources; inducing-point sparsity makes inference tractable at 40k training windows}{figure.caption.13}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.4}Baseline Methods}{4}{subsection.3.4}\protected@file@percent }
+\newlabel{sec:baselines}{{3.4}{4}{Baseline Methods}{subsection.3.4}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {4}Results and Analysis}{4}{section.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.1}Calibration vs.\ Baselines}{4}{subsection.4.1}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {2}{\ignorespaces Test-set calibration and discrimination. GP (enhanced) is the final model with ARD and the angular-velocity feature $\dot  {\theta }$.}}{5}{table.caption.14}\protected@file@percent }
+\newlabel{tab:ece}{{2}{5}{Test-set calibration and discrimination. GP (enhanced) is the final model with ARD and the angular-velocity feature $\dot {\theta }$}{table.caption.14}{}}
+\newlabel{fig:ece_all}{{3a}{5}{ECE (log scale) across all models}{figure.caption.15}{}}
+\newlabel{sub@fig:ece_all}{{a}{5}{ECE (log scale) across all models}{figure.caption.15}{}}
+\newlabel{fig:reliability}{{3b}{5}{Reliability diagram: GP vs.\ threshold}{figure.caption.15}{}}
+\newlabel{sub@fig:reliability}{{b}{5}{Reliability diagram: GP vs.\ threshold}{figure.caption.15}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces Calibration results. The GP's predicted probabilities are tightly calibrated; the threshold detector is severely overconfident at high confidence values.}}{5}{figure.caption.15}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.2}Ablation Study}{5}{subsection.4.2}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces Test ECE by ablation variant. Removing the additive structure (single\_rbf) degrades calibration by $5\times $ despite identical AUROC.}}{5}{figure.caption.16}\protected@file@percent }
+\newlabel{fig:ablation}{{4}{5}{Test ECE by ablation variant. Removing the additive structure (single\_rbf) degrades calibration by $5\times $ despite identical AUROC}{figure.caption.16}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.3}Angular Velocity Feature and ARD Lengthscales}{6}{subsection.4.3}\protected@file@percent }
+\newlabel{sec:elev_rate}{{4.3}{6}{Angular Velocity Feature and ARD Lengthscales}{subsection.4.3}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {5}{\ignorespaces Per-feature ARD lengthscales from the trained full model. A lower lengthscale means the GP is more sensitive to that feature. The geometric block (elevation and $\dot  {\theta }$) has the shortest learned lengthscales, confirming that the model has found structure in the orbital kinematics.}}{6}{figure.caption.17}\protected@file@percent }
+\newlabel{fig:lengthscales}{{5}{6}{Per-feature ARD lengthscales from the trained full model. A lower lengthscale means the GP is more sensitive to that feature. The geometric block (elevation and $\dot {\theta }$) has the shortest learned lengthscales, confirming that the model has found structure in the orbital kinematics}{figure.caption.17}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {4.4}SOFT Window Analysis}{6}{subsection.4.4}\protected@file@percent }
-\@writefile{lof}{\contentsline {figure}{\numberline {6}{\ignorespaces GP detection probability by window class. SOFT windows fill the uncertain middle range, showing calibrated uncertainty rather than overconfident predictions.}}{6}{figure.caption.16}\protected@file@percent }
-\newlabel{fig:soft_hist}{{6}{6}{GP detection probability by window class. SOFT windows fill the uncertain middle range, showing calibrated uncertainty rather than overconfident predictions}{figure.caption.16}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {4.5}Pass-Level Aggregation}{6}{subsection.4.5}\protected@file@percent }
-\@writefile{lot}{\contentsline {table}{\numberline {3}{\ignorespaces Pass-level detection on the test split (5,526 passes, 341 positive).}}{6}{table.caption.17}\protected@file@percent }
-\newlabel{tab:pass}{{3}{6}{Pass-level detection on the test split (5,526 passes, 341 positive)}{table.caption.17}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {5}Conclusion}{6}{section.5}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {6}{\ignorespaces GP detection probability by window class. SOFT windows fill the uncertain middle range, showing calibrated uncertainty rather than overconfident predictions.}}{7}{figure.caption.18}\protected@file@percent }
+\newlabel{fig:soft_hist}{{6}{7}{GP detection probability by window class. SOFT windows fill the uncertain middle range, showing calibrated uncertainty rather than overconfident predictions}{figure.caption.18}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {3}{\ignorespaces SOFT-window GP detection probability stratified by z-score sub-bin. The model never sees these windows during training, yet probabilities scale monotonically with z.}}{7}{table.caption.19}\protected@file@percent }
+\newlabel{tab:soft_strat}{{3}{7}{SOFT-window GP detection probability stratified by z-score sub-bin. The model never sees these windows during training, yet probabilities scale monotonically with z}{table.caption.19}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.5}Pass-Level Aggregation}{7}{subsection.4.5}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {4}{\ignorespaces Pass-level detection on the test split (5,526 passes, 341 positive).}}{7}{table.caption.20}\protected@file@percent }
+\newlabel{tab:pass}{{4}{7}{Pass-level detection on the test split (5,526 passes, 341 positive)}{table.caption.20}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {5}Conclusion}{7}{section.5}\protected@file@percent }
 \bibcite{prior257b}{{1}{}{{}}{{}}}
 \bibcite{hensman2015scalable}{{2}{}{{}}{{}}}
 \bibcite{rasmussen2006gaussian}{{3}{}{{}}{{}}}
 \bibcite{titsias2009variational}{{4}{}{{}}{{}}}
 \bibcite{milios2018dirichlet}{{5}{}{{}}{{}}}
+\@writefile{toc}{\contentsline {paragraph}{Limitations.}{8}{section*.21}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Future work.}{8}{section*.22}\protected@file@percent }
 \bibcite{williams1998bayesian}{{6}{}{{}}{{}}}
 \bibcite{bhatt2023passive}{{7}{}{{}}{{}}}
 \bibcite{neinavaie2021acquisition}{{8}{}{{}}{{}}}
@@ -74,5 +82,5 @@
 \bibcite{naeini2015obtaining}{{11}{}{{}}{{}}}
 \bibcite{guo2017calibration}{{12}{}{{}}{{}}}
 \providecommand\NAT@force@numbers{}\NAT@force@numbers
-\@writefile{lof}{\contentsline {figure}{\numberline {7}{\ignorespaces Teaching evaluation submission confirmation (5-point bonus).}}{8}{figure.caption.22}\protected@file@percent }
-\gdef \@abspage@last{8}
+\@writefile{lof}{\contentsline {figure}{\numberline {7}{\ignorespaces Teaching evaluation submission confirmation (5-point bonus).}}{9}{figure.caption.27}\protected@file@percent }
+\gdef \@abspage@last{9}
