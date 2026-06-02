@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Starlink GP Detector | ECE 228</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    background: #f0f4ff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  .deck {
+    width: 960px;
+    height: 540px;
+    position: relative;
+  }
+
+  .slide {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 52px 64px;
+    display: none;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .slide.active { display: flex; }
+
+  /* accent bar at top */
+  .slide::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 6px;
+    background: linear-gradient(90deg, #1d4ed8 0%, #7c3aed 100%);
+    border-radius: 12px 12px 0 0;
+  }
+
+  /* slide label */
+  .tag {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #1d4ed8;
+    margin-bottom: 18px;
+  }
+
+  h1 {
+    font-size: 36px;
+    font-weight: 800;
+    color: #0f172a;
+    line-height: 1.15;
+    margin-bottom: 10px;
+  }
+
+  h2 {
+    font-size: 28px;
+    font-weight: 700;
+    color: #0f172a;
+    line-height: 1.2;
+    margin-bottom: 20px;
+  }
+
+  .subtitle {
+    font-size: 17px;
+    color: #475569;
+    margin-bottom: 6px;
+  }
+
+  .author {
+    font-size: 14px;
+    color: #94a3b8;
+    margin-top: 24px;
+  }
+
+  ul {
+    list-style: none;
+    margin-top: 6px;
+  }
+
+  ul li {
+    font-size: 17px;
+    color: #334155;
+    padding: 6px 0;
+    padding-left: 22px;
+    position: relative;
+    line-height: 1.5;
+  }
+
+  ul li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 14px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #1d4ed8;
+  }
+
+  ul li span.hl {
+    color: #1d4ed8;
+    font-weight: 700;
+  }
+
+  ul li span.orange {
+    color: #ea580c;
+    font-weight: 700;
+  }
+
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 40px;
+    flex: 1;
+  }
+
+  .col-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #94a3b8;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid #e2e8f0;
+  }
+
+  .stat-row {
+    display: flex;
+    gap: 32px;
+    margin-top: 12px;
+  }
+
+  .stat {
+    flex: 1;
+    text-align: center;
+    padding: 18px 12px;
+    background: #f8fafc;
+    border-radius: 8px;
+    border-top: 3px solid #1d4ed8;
+  }
+
+  .stat.orange-top { border-top-color: #ea580c; }
+  .stat.green-top  { border-top-color: #16a34a; }
+
+  .stat .num {
+    font-size: 30px;
+    font-weight: 800;
+    color: #0f172a;
+    line-height: 1;
+    margin-bottom: 6px;
+  }
+
+  .stat .label {
+    font-size: 12px;
+    color: #64748b;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  .kernel-eq {
+    margin-top: 16px;
+    padding: 14px 20px;
+    background: #f1f5f9;
+    border-left: 4px solid #7c3aed;
+    border-radius: 0 6px 6px 0;
+    font-family: "SF Mono", "Fira Code", "Courier New", monospace;
+    font-size: 15px;
+    color: #1e293b;
+    line-height: 1.7;
+  }
+
+  .kernel-eq .kpart { color: #1d4ed8; font-weight: 700; }
+  .kernel-eq .kdesc { color: #64748b; font-size: 13px; }
+
+  .nav {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .nav button {
+    background: #1d4ed8;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 8px 20px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+
+  .nav button:hover { background: #1e40af; }
+  .nav button:disabled { background: #cbd5e1; cursor: default; }
+
+  .dots {
+    display: flex;
+    gap: 8px;
+  }
+
+  .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #cbd5e1;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+
+  .dot.active { background: #1d4ed8; }
+
+  .slide-num {
+    position: absolute;
+    bottom: 20px;
+    right: 28px;
+    font-size: 12px;
+    color: #cbd5e1;
+    font-weight: 600;
+  }
+
+  .pill {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 99px;
+    font-size: 12px;
+    font-weight: 700;
+    margin-right: 6px;
+  }
+
+  .pill.blue  { background: #dbeafe; color: #1d4ed8; }
+  .pill.purple{ background: #ede9fe; color: #7c3aed; }
+  .pill.orange{ background: #ffedd5; color: #ea580c; }
+
+  .verdict {
+    margin-top: auto;
+    padding: 14px 20px;
+    background: linear-gradient(135deg, #eff6ff 0%, #f5f3ff 100%);
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 700;
+    color: #1d4ed8;
+    text-align: center;
+  }
+
+  .spacer { flex: 1; }
+
+  /* title slide layout */
+  .title-meta {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 28px;
+  }
+</style>
+</head>
+<body>
+
+<div class="deck">
+
+  <!-- SLIDE 1: Title -->
+  <div class="slide active" id="s1">
+    <div class="title-meta">
+      <span class="pill blue">ECE 228</span>
+      <span class="pill purple">Solo Project</span>
+    </div>
+    <h1>Physics-Informed GP<br>for Passive Starlink Detection</h1>
+    <p class="subtitle">Replacing a z-score threshold with a calibrated Sparse Variational Gaussian Process</p>
+    <div class="spacer"></div>
+    <ul>
+      <li>619,705 windows, 14-day SDR campaign, Ku-band @ 12 GHz</li>
+      <li>Continues the passive detection pipeline built in ECE 257B</li>
+    </ul>
+    <p class="author">Akshat Gupta &nbsp;|&nbsp; Team 50 &nbsp;|&nbsp; akg007@ucsd.edu</p>
+    <div class="slide-num">1 / 5</div>
+  </div>
+
+  <!-- SLIDE 2: Prior Work + Problem -->
+  <div class="slide" id="s2">
+    <div class="tag">Where this starts</div>
+    <h2>ECE 257B built a working detector. It has two problems.</h2>
+    <div class="two-col">
+      <div>
+        <div class="col-label">What 257B did</div>
+        <ul>
+          <li>USRP X310 records Ku-band at 50 MS/s</li>
+          <li>Welch PSD finds the 750 Hz OFDM frame fingerprint</li>
+          <li>z-score threshold at z = 4.0 fires a detection</li>
+          <li>Near-perfect ranking (AUROC ~ 1.0)</li>
+        </ul>
+      </div>
+      <div>
+        <div class="col-label">The two problems</div>
+        <ul>
+          <li>Binary output, <span class="orange">no confidence score</span></li>
+          <li><span class="orange">70,000 ambiguous windows</span> (z in 2.5 to 4.0) are thrown out entirely</li>
+          <li>For track-before-detect, these borderline windows are the most useful ones</li>
+        </ul>
+      </div>
+    </div>
+    <div class="slide-num">2 / 5</div>
+  </div>
+
+  <!-- SLIDE 3: The Approach -->
+  <div class="slide" id="s3">
+    <div class="tag">The approach</div>
+    <h2>Swap the threshold for a physics-informed SVGP</h2>
+    <ul>
+      <li><span class="hl">Additive kernel</span>: each physical evidence source gets its own RBF block</li>
+      <li><span class="hl">ARD</span> per feature: model learns which features matter, lengthscales are interpretable</li>
+      <li><span class="hl">Sparse variational</span> approximation: 300 inducing points, scales to 40k training windows</li>
+    </ul>
+    <div class="kernel-eq">
+      k(x, x') =
+      <span class="kpart">k_geom</span>(elevation, angular velocity)
+      &nbsp;+&nbsp;
+      <span class="kpart">k_spec</span>(z-score, harmonics, freq deviation)
+      &nbsp;+&nbsp;
+      <span class="kpart">k_time</span>(hour, day)
+      <br>
+      <span class="kdesc">each block uses separate learned lengthscales via ARD</span>
+    </div>
+    <p style="font-size:14px; color:#94a3b8; margin-top:12px;">
+      Angular velocity (d&theta;/dt) added as a 9th feature: fast-moving satellites smear the 750 Hz peak, making z-score less reliable even at the same elevation.
+    </p>
+    <div class="slide-num">3 / 5</div>
+  </div>
+
+  <!-- SLIDE 4: Results -->
+  <div class="slide" id="s4">
+    <div class="tag">Results</div>
+    <h2>230x better calibration. Additive structure is the key.</h2>
+    <div class="stat-row">
+      <div class="stat">
+        <div class="num">230x</div>
+        <div class="label">ECE improvement<br>vs threshold</div>
+      </div>
+      <div class="stat orange-top">
+        <div class="num">5.7x</div>
+        <div class="label">single RBF worse<br>than additive GP</div>
+      </div>
+      <div class="stat green-top">
+        <div class="num">0</div>
+        <div class="label">false positives<br>pass-level detection</div>
+      </div>
+      <div class="stat" style="border-top-color:#7c3aed">
+        <div class="num">52.9%</div>
+        <div class="label">SOFT windows in<br>confirmed passes score &gt;0.5</div>
+      </div>
+    </div>
+    <ul style="margin-top:18px;">
+      <li>5-seed mean ECE: <span class="hl">9.99e-5 (+/- 4.95e-6)</span> vs threshold 2.3e-2</li>
+      <li>SOFT windows in negative passes: only 18% score above 0.5 (down from 52.9%)</li>
+      <li>Additive kernel separating physical evidence is what makes this work</li>
+    </ul>
+    <div class="slide-num">4 / 5</div>
+  </div>
+
+  <!-- SLIDE 5: Takeaway -->
+  <div class="slide" id="s5">
+    <div class="tag">Takeaway</div>
+    <h2>Three things I want you to remember</h2>
+    <ul>
+      <li>
+        <span class="hl">Kernel design is the model.</span>
+        A single RBF is 5.7x worse in calibration despite identical ranking. The physics prior is load-bearing.
+      </li>
+      <li>
+        <span class="hl">Calibration is not the same as discrimination.</span>
+        AUROC = 1.0 for every model here because the labels are defined by z-score. ECE is the only metric that tells you anything.
+      </li>
+      <li>
+        <span class="hl">The "bad" data becomes useful.</span>
+        70,000 windows the threshold discards now have calibrated probabilities the GP assigns. That is the whole point.
+      </li>
+    </ul>
+    <div class="verdict">ECE 228 lesson: physics priors belong in the kernel, not just in feature preprocessing.</div>
+    <div class="slide-num">5 / 5</div>
+  </div>
+
+</div>
+
+<!-- Navigation -->
+<div class="nav">
+  <button id="prev" onclick="go(-1)" disabled>&#8592; Prev</button>
+  <div class="dots" id="dots"></div>
+  <button id="next" onclick="go(1)">Next &#8594;</button>
+</div>
+
+<script>
+  let cur = 0;
+  const slides = document.querySelectorAll('.slide');
+  const dotsEl = document.getElementById('dots');
+  const prevBtn = document.getElementById('prev');
+  const nextBtn = document.getElementById('next');
+
+  // Build dots
+  slides.forEach((_, i) => {
+    const d = document.createElement('div');
+    d.className = 'dot' + (i === 0 ? ' active' : '');
+    d.onclick = () => jump(i);
+    dotsEl.appendChild(d);
+  });
+
+  function show(n) {
+    slides[cur].classList.remove('active');
+    dotsEl.children[cur].classList.remove('active');
+    cur = n;
+    slides[cur].classList.add('active');
+    dotsEl.children[cur].classList.add('active');
+    prevBtn.disabled = cur === 0;
+    nextBtn.disabled = cur === slides.length - 1;
+  }
+
+  function go(dir) { if (cur + dir >= 0 && cur + dir < slides.length) show(cur + dir); }
+  function jump(n) { show(n); }
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' || e.key === 'Space') go(1);
+    if (e.key === 'ArrowLeft') go(-1);
+  });
+</script>
+
+</body>
+</html>
